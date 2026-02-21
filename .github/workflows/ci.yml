@@ -61,7 +61,7 @@ jobs:
   # ===============================
   deploy:
     needs: build
-    runs-on: SokhnaOumy
+    runs-on: self-hosted
 
     steps:
       - name: Pull latest Docker image
