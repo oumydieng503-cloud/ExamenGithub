@@ -46,3 +46,26 @@ jobs:
   # ===============================
   # JOB 2 - CD : DEPLOY
   # ===============================
+     deploy:
+    needs: ci
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull latest Docker image
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Stop existing container (if any)
+        run: |
+          docker stop ci-app || true
+
+      - name: Remove old container
+        run: |
+          docker rm ci-app || true
+
+      - name: Run new container
+        run: |
+          docker run -d \
+            -p 80:80 \
+            --name ci-app \
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
