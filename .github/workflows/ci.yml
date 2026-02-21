@@ -1,16 +1,23 @@
-name: CI - Build & Push Docker Image
+name: CI/CD Docker Pipeline
 
 on:
   push:
     branches:
       - main
 
+# ===============================
+# VARIABLES GLOBALES
+# ===============================
 env:
   IMAGE_NAME: ci-html
   IMAGE_TAG: latest
   DOCKER_REGISTRY: docker.io
 
 jobs:
+  # ===============================
+  # PARTIE 1 + 2
+  # CI : BUILD + PUSH + TRIVY
+  # ===============================
   build:
     runs-on: ubuntu-latest
 
@@ -25,15 +32,19 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:$IMAGE_TAG .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+
       - name: Verify image
         run: |
           docker image ls | grep $IMAGE_NAME
-   
+
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:$IMAGE_TAG
-          
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      # ===============================
+      # PARTIE 2 : SCAN DE SÉCURITÉ
+      # ===============================
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.20.0
         with:
@@ -43,11 +54,13 @@ jobs:
           exit-code: 1
           vuln-type: os,library
           ignore-unfixed: true
+
   # ===============================
-  # JOB 2 - CD : DEPLOY
+  # PARTIE 3
+  # CD : DEPLOY (SELF-HOSTED)
   # ===============================
-     deploy:
-    needs: ci
+  deploy:
+    needs: build
     runs-on: self-hosted
 
     steps:
@@ -55,7 +68,7 @@ jobs:
         run: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-      - name: Stop existing container (if any)
+      - name: Stop existing container (if exists)
         run: |
           docker stop ci-app || true
 
