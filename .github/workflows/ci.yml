@@ -61,7 +61,7 @@ jobs:
   # ===============================
   deploy:
     needs: build
-    runs-on: self-hosted
+    runs-on: oumy
 
     steps:
       - name: Pull latest Docker image
